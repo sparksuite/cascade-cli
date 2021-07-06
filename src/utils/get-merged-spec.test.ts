@@ -49,6 +49,7 @@ describe('#getMergedSpec()', () => {
 				description: 'What you want to list',
 				accepts: ['toppings', 'crusts', 'two words'],
 				required: true,
+				acceptsMultiple: true,
 			},
 			description: 'List something',
 			flags: {

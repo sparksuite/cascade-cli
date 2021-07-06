@@ -13,7 +13,7 @@ import Fuse from 'fuse.js';
 // Define what organized arguments look like
 interface OrganizedArguments {
 	command: string;
-	data?: string | number;
+	data?: string | number | string[] | number[];
 	flags: string[];
 	options: string[];
 	values: (string | number)[];
@@ -287,16 +287,25 @@ export default async function getOrganizedArguments(): Promise<OrganizedArgument
 
 		// Validate data, if necessary
 		if (mergedSpec.data.accepts && mergedSpec.data.accepts instanceof Array) {
+			// Initialize holder of acceptable values
+			const acceptables: string[] = [];
+
 			// Find unrecognized data by removing acceptable values
+			//  -> Space-padding to guard against partial matches
+			//  -> Acceptables list should be presented in longest to shortest ordering if multi-word phrases exist
 			let remnants = ` ${organizedArguments.data} `;
 
 			for (const current of mergedSpec.data.accepts) {
-				remnants = remnants.replace(` ${current} `, ' '); // Space-padding to guard against partial matches
+				if (remnants.indexOf(` ${current} `) >= 0) {
+					acceptables.push(`${current}`);
+
+					remnants = remnants.replace(` ${current} `, ' ');
+				}
 			}
 
 			remnants = remnants.trim();
 
-			// Error if unknown remnants remain
+			// Error if unacceptable remnants remain
 			if (remnants.length > 0) {
 				throw new PrintableError(
 					`Unrecognized data for "${organizedArguments.command.trim()}": ${remnants}\nAccepts: ${mergedSpec.data.accepts.join(
@@ -304,36 +313,46 @@ export default async function getOrganizedArguments(): Promise<OrganizedArgument
 					)}`
 				);
 			}
+
+			// Error if we have multiple when single is expected
+			if (!mergedSpec.data.acceptsMultiple && acceptables.length > 1) {
+				throw new PrintableError(
+					`Only 1 of the acceptable data items are allowed.\nAccepts one of: ${mergedSpec.data.accepts.join(', ')}`
+				);
+			}
+
+			// Use validated data
+			organizedArguments.data = mergedSpec.data.acceptsMultiple ? acceptables : acceptables[0];
 		}
 
 		if (mergedSpec.data.type) {
-			if (mergedSpec.data.type === 'integer') {
-				if (/^[0-9]+$/.test(organizedArguments.data)) {
-					organizedArguments.data = parseInt(organizedArguments.data, 10);
+			const dataItems =
+				typeof organizedArguments.data === 'object' ? organizedArguments.data : [organizedArguments.data];
+			const acceptables: number[] = [];
+
+			for (const dataItem of dataItems) {
+				if (mergedSpec.data.type === 'integer') {
+					if (/^[0-9]+$/.test(dataItem)) {
+						acceptables.push(parseInt(dataItem, 10));
+					} else {
+						throw new PrintableError(
+							`The command "${organizedArguments.command.trim()}" expects integer data\nProvided: ${dataItem}`
+						);
+					}
+				} else if (mergedSpec.data.type === 'float') {
+					if (/^[0-9]*[.]*[0-9]*$/.test(dataItem) && dataItem !== '.' && dataItem !== '') {
+						acceptables.push(parseFloat(dataItem));
+					} else {
+						throw new PrintableError(
+							`The command "${organizedArguments.command.trim()}" expects float data\nProvided: ${dataItem}`
+						);
+					}
 				} else {
-					throw new PrintableError(
-						`The command "${organizedArguments.command.trim()}" expects integer data\nProvided: ${
-							organizedArguments.data
-						}`
-					);
+					throw new PrintableError(`Unrecognized "type": ${String(mergedSpec.data.type)}`);
 				}
-			} else if (mergedSpec.data.type === 'float') {
-				if (
-					/^[0-9]*[.]*[0-9]*$/.test(organizedArguments.data) &&
-					organizedArguments.data !== '.' &&
-					organizedArguments.data !== ''
-				) {
-					organizedArguments.data = parseFloat(organizedArguments.data);
-				} else {
-					throw new PrintableError(
-						`The command "${organizedArguments.command.trim()}" expects float data\nProvided: ${
-							organizedArguments.data
-						}`
-					);
-				}
-			} else {
-				throw new PrintableError(`Unrecognized "type": ${String(mergedSpec.data.type)}`);
 			}
+
+			organizedArguments.data = mergedSpec.data.acceptsMultiple ? acceptables : acceptables[0];
 		}
 	}
 

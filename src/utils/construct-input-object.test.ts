@@ -23,7 +23,7 @@ describe('#constructInputObject()', () => {
 
 		expect(await constructInputObject()).toStrictEqual({
 			command: 'list',
-			data: 'toppings',
+			data: ['toppings'],
 			options: {
 				'delivery-zip-code': '55555',
 				limit: undefined,

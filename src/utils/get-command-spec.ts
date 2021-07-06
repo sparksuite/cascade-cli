@@ -16,6 +16,7 @@ export interface CommandInput {
 	};
 	data?: string | string[] | number | number[];
 	acceptsPassThroughArgs?: true;
+	acceptsMultipleData?: true;
 }
 
 // Helper types
@@ -118,6 +119,9 @@ export type CommandSpec<Input extends CommandInput = EmptyCommandInput> = OmitEx
 
 					/** Whether to ignore anything that looks like flags/options once data is reached. Useful if you expect your data to contain things that would otherwise appear to be flags/options. */
 					ignoreFlagsAndOptions?: true;
+
+					// ** Whether the accepts is singular or a list of acceptable values. */
+					acceptsMultiple: undefined extends Input['acceptsMultipleData'] ? ExcludeMe : true;
 			  }>
 		: ExcludeMe;
 }>;
@@ -150,6 +154,7 @@ export interface GenericCommandSpec {
 		type?: 'integer' | 'float';
 		accepts?: string[] | number[] | (() => string[] | number[]) | (() => Promise<string[] | number[]>);
 		ignoreFlagsAndOptions?: true;
+		acceptsMultiple?: true;
 	};
 }
 
@@ -197,6 +202,10 @@ export default async function getCommandSpec(directory: string): Promise<Generic
 		if (spec.data?.accepts && typeof spec.data.accepts === 'function') {
 			const arrayOrPromise = spec.data.accepts();
 			spec.data.accepts = arrayOrPromise instanceof Promise ? await arrayOrPromise : arrayOrPromise;
+		}
+
+		if ((spec.data?.acceptsMultiple || spec.data?.accepts) && !(spec.data?.accepts instanceof Array)) {
+			throw new Error('data.accepts must resolve to an Array');
 		}
 
 		return spec;

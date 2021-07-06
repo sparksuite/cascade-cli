@@ -41,7 +41,7 @@ describe('#getOrganizedArguments()', () => {
 			flags: [],
 			options: [],
 			values: [],
-			data: 'toppings',
+			data: ['toppings'],
 			command: 'list',
 		});
 	});
@@ -59,7 +59,7 @@ describe('#getOrganizedArguments()', () => {
 			flags: [],
 			options: [],
 			values: [],
-			data: 'two words',
+			data: ['two words'],
 			command: 'list',
 		});
 	});
@@ -78,7 +78,7 @@ describe('#getOrganizedArguments()', () => {
 			flags: [],
 			options: [],
 			values: [],
-			data: 'two words crusts',
+			data: ['crusts', 'two words'],
 			command: 'list',
 		});
 	});
@@ -95,7 +95,7 @@ describe('#getOrganizedArguments()', () => {
 				flags: ['help'],
 				options: [],
 				values: [],
-				data: 'toppings',
+				data: ['toppings'],
 				command: 'list',
 			});
 	});
@@ -654,6 +654,20 @@ describe('#getOrganizedArguments()', () => {
 			'pass-through-data',
 		]),
 			await expect(getOrganizedArguments()).rejects.toThrow('This command does not support pass-through arguments');
+	});
+
+	it('Complains about unexpected multiple data not in "values"', async () => {
+		(process.argv = [
+			'/path/to/node',
+			path.join(testProjectsPath, 'pizza-ordering', 'cli', 'entry.js'),
+			'order',
+			'single-topping',
+			'cheese',
+			'pineapple',
+		]),
+			await expect(getOrganizedArguments()).rejects.toThrow(
+				'Only 1 of the acceptable data items are allowed.\nAccepts one of: pineapple, ham, chicken, cheese'
+			);
 	});
 
 	it('Handles having pass-through arguments', async () => {

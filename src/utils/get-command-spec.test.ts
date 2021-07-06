@@ -23,6 +23,12 @@ describe('#getCommandSpec()', () => {
 		);
 	});
 
+	it('Complains about invalid spec JS', async () => {
+		await expect(getCommandSpec(path.join(testFileTrees, 'bad-structure', 'cli', 'invalid-data-js'))).rejects.toThrow(
+			'Encountered this error while importing the spec file at'
+		);
+	});
+
 	it('Returns the spec file', async () => {
 		expect(await getCommandSpec(path.join(testFileTrees, 'primary'))).toStrictEqual({
 			flags: {

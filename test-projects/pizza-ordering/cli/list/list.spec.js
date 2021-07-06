@@ -3,6 +3,7 @@ module.exports = {
 	data: {
 		description: 'What you want to list',
 		accepts: ['toppings', 'crusts', 'two words'],
+		acceptsMultiple: true,
 		required: true,
 	},
 	flags: {

@@ -19,6 +19,7 @@ describe('#getAllProgramCommands()', () => {
 			'order dynamic-sync-accepts',
 			'order float-data',
 			'order integer-data',
+			'order single-topping',
 			'order to-go',
 		]);
 	});
