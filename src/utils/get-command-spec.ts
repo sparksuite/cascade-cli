@@ -23,6 +23,8 @@ export type EmptyCommandInput = {
 	[Key in keyof Required<CommandInput>]: undefined;
 };
 
+type AlwaysArray<T> = T extends Array<infer Item> ? Item[] : undefined extends T ? NonNullable<T> | undefined : T[];
+
 /** Describes a command's specifications */
 export type CommandSpec<Input extends CommandInput = EmptyCommandInput> = OmitExcludeMeProperties<{
 	/** A description of this command, to be shown on help screens. */
@@ -78,12 +80,11 @@ export type CommandSpec<Input extends CommandInput = EmptyCommandInput> = OmitEx
 							: ExcludeMe;
 
 						/** A finite array of acceptable option values or callback providing same. Invalid values will be rejected. */
-						accepts: NonNullable<Input['options'][Option]> extends
-							| string[]
-							| number[]
-							| (() => string[] | number[])
-							| (() => Promise<string[] | number[]>)
-							? Input['options'][Option] | (() => Promise<Input['options'][Option]>)
+						accepts: NonNullable<Input['options'][Option]> extends string | number | string[] | number[]
+							?
+									| AlwaysArray<Input['options'][Option]>
+									| (() => AlwaysArray<Input['options'][Option]>)
+									| (() => Promise<AlwaysArray<Input['options'][Option]>>)
 							: ExcludeMe;
 					}>;
 			  }
@@ -108,12 +109,11 @@ export type CommandSpec<Input extends CommandInput = EmptyCommandInput> = OmitEx
 						: ExcludeMe;
 
 					/** A finite array of acceptable data values or callback providing same. Invalid data will be rejected. */
-					accepts: NonNullable<Input['data']> extends
-						| string[]
-						| number[]
-						| (() => string[] | number[])
-						| (() => Promise<string[] | number[]>)
-						? Input['data'] | (() => Promise<Input['data']>)
+					accepts: NonNullable<Input['data']> extends string | number | string[] | number[]
+						?
+								| AlwaysArray<Input['data']>
+								| (() => AlwaysArray<Input['data']>)
+								| (() => Promise<AlwaysArray<Input['data']>>)
 						: ExcludeMe;
 
 					/** Whether to ignore anything that looks like flags/options once data is reached. Useful if you expect your data to contain things that would otherwise appear to be flags/options. */
